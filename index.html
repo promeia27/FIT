@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>轻悦·FitMate — 艺术膳食管家</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 20%, rgba(14,165,233,0.08), #EFF3F8);
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(14,165,233,0.15), transparent);
+            top: 5%;
+            left: -10%;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        body::after {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(45,212,191,0.1), transparent);
+            bottom: 0;
+            right: -15%;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* 手机壳 */
+        .phone-mock {
+            width: 100%;
+            max-width: 380px;
+            height: 720px;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 30px 45px rgba(0, 0, 0, 0.12), 0 0 0 8px rgba(14,165,233,0.2), 0 0 0 12px #E2E8F0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .dynamic-island {
+            padding: 14px 24px 10px 24px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            font-size: 15px;
+            font-weight: 600;
+            color: #0F172A;
+            border-bottom: 1px solid rgba(14,165,233,0.15);
+            flex-shrink: 0;
+            border-radius: 56px 56px 0 0;
+        }
+
+        .pages-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        .pages-container::-webkit-scrollbar { width: 3px; }
+        .pages-container::-webkit-scrollbar-thumb { background: #0EA5E9; border-radius: 20px; }
+
+        .page {
+            display: none;
+            padding: 16px 14px 20px 14px;
+            animation: fadeInUp 0.3s ease;
+        }
+        .page.active-page { display: block; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page#page2 {
+            padding: 0 !important;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            background: #F8FAFE;
+        }
+        .page#page2.active-page { display: flex; }
+
+        .bottom-nav {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(14,165,233,0.2);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 16px 18px;
+            border-radius: 0 0 56px 56px;
+            flex-shrink: 0;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748B;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .nav-item i {
+            font-size: 22px;
+            background: linear-gradient(135deg, #64748B, #94A3B8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: 0.2s;
+        }
+        .nav-item.active i {
+            background: linear-gradient(135deg, #0EA5E9, #3B82F6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-item.active { color: #0EA5E9; }
+
+        .card {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(4px);
+            border-radius: 40px;
+            padding: 18px 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(14,165,233,0.18);
+        }
+        .card-title {
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #0F172A, #1E293B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.2px;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .stat-item {
+            background: rgba(14,165,233,0.06);
+            border-radius: 32px;
+            text-align: center;
+            padding: 12px 6px;
+            border: 1px solid rgba(14,165,233,0.2);
+        }
+        .editable-value input {
+            width: 70px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 800;
+            background: transparent;
+            border: none;
+            border-bottom: 2px dotted #0EA5E9;
+            font-family: monospace;
+            color: #0F172A;
+        }
+        .stat-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-top: 6px;
+        }
+        .meal-section {
+            background: rgba(248,250,254,0.8);
+            border-radius: 36px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(14,165,233,0.15);
+        }
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+            font-weight: 800;
+            font-size: 16px;
+        }
+        .meal-total-cal {
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(14,165,233,0.12);
+            padding: 4px 14px;
+            border-radius: 60px;
+        }
+        .food-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 48px;
+            border: 1px solid #E2E8F0;
+        }
+        .food-select {
+            flex: 2;
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 40px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .food-weight {
+            width: 70px;
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 40px;
+            padding: 8px 8px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .food-cal {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0EA5E9;
+            min-width: 70px;
+            text-align: right;
+        }
+        .del-food {
+            background: rgba(249,115,22,0.1);
+            border: none;
+            border-radius: 50px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+        }
+        .add-food-btn {
+            background: rgba(14,165,233,0.1);
+            border: 1px dashed #0EA5E9;
+            border-radius: 60px;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #0EA5E9;
+            width: 100%;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+        .nutrient-bar {
+            display: flex;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .nutrient {
+            flex: 1;
+            background: rgba(241,245,249,0.8);
+            border-radius: 32px;
+            padding: 10px 4px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .progress-bg {
+            background: #E2E8F0;
+            border-radius: 20px;
+            height: 6px;
+            margin: 8px 0 4px;
+        }
+        .progress-fill {
+            background: #0EA5E9;
+            width: 0%;
+            height: 6px;
+            border-radius: 20px;
+        }
+        .badge-icon {
+            background: rgba(14,165,233,0.1);
+            border-radius: 60px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .ai-btn {
+            background: linear-gradient(105deg, #0EA5E9, #3B82F6);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 80px;
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 14px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 6px 14px rgba(14,165,233,0.25);
+        }
+        .fullscreen-courses {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: #F8FAFE;
+        }
+        .course-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px 24px 12px;
+            overflow-y: auto;
+            background: #FFFFFF;
+        }
+        .course-col:first-child { border-right: 1px solid rgba(14,165,233,0.12); }
+        .section-header {
+            font-weight: 800;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #0F172A, #334155);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .img-course-card {
+            background: white;
+            border-radius: 44px;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.04);
+            transition: transform 0.1s;
+            cursor: pointer;
+            overflow: hidden;
+            border: 1px solid rgba(14,165,233,0.2);
+        }
+        .course-img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+            padding: 12px;
+        }
+        .course-badge {
+            background: rgba(14,165,233,0.9);
+            backdrop-filter: blur(4px);
+            border-radius: 60px;
+            padding: 6px 16px;
+            font-weight: 700;
+            font-size: 12px;
+            color: white;
+        }
+        .recipe-master {
+            background: linear-gradient(125deg, #FFF9F0, #FFF2E6);
+            border-radius: 56px;
+            padding: 32px 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255,228,196,0.8);
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.06);
+        }
+        .price-tag {
+            background: rgba(14,165,233,0.15);
+            border-radius: 60px;
+            padding: 8px 20px;
+            display: inline-block;
+            font-weight: 700;
+            margin: 16px 0 14px;
+        }
+        .steps {
+            background: rgba(255,248,235,0.7);
+            border-radius: 44px;
+            padding: 20px;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .search-card {
+            background: rgba(248,250,254,0.9);
+            border-radius: 48px;
+            padding: 20px;
+            border: 1px solid rgba(14,165,233,0.2);
+        }
+        .search-box {
+            background: white;
+            border-radius: 80px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 12px;
+            margin: 12px 0;
+            border: 1px solid #E2E8F0;
+        }
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-box button {
+            background: none;
+            border: none;
+            color: #0EA5E9;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .food-result {
+            background: white;
+            border-radius: 40px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .week-report {
+            background: #F8FAFE;
+            border-radius: 40px;
+            padding: 18px;
+        }
+        .week-bars {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .bar {
+            background: #0EA5E9;
+            border-radius: 20px;
+        }
+        .friend-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(14,165,233,0.1);
+            font-weight: 500;
+        }
+        .points-shop {
+            background: linear-gradient(125deg, #FEF9E6, #FFF2E0);
+            border-radius: 44px;
+            padding: 18px;
+            margin-top: 12px;
+        }
+        .btn-sm, .btn-outline {
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 16px;
+            font-size: 12px;
+        }
+        .danmaku-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        .danmaku {
+            position: absolute;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 8px 22px;
+            border-radius: 60px;
+            border-left: 4px solid #2DD4BF;
+            font-size: 13px;
+            font-weight: 600;
+            animation: fly 8s linear forwards;
+        }
+        @keyframes fly {
+            0% { transform: translateX(100%); opacity: 1; }
+            70% { opacity: 1; }
+            100% { transform: translateX(-180%); opacity: 0; }
+        }
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-container {
+            width: 280px;
+            background: white;
+            border-radius: 56px;
+            padding: 28px 24px;
+            text-align: center;
+            border: 1px solid #0EA5E9;
+        }
+        .inline-flex { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .text-small { font-size: 11px; }
+        .mt-2 { margin-top: 8px; }
+
+        /* 二维码辅助区域 */
+        .qr-share-area {
+            max-width: 380px;
+            margin: 0 auto 20px;
+            background: white;
+            border-radius: 40px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(14,165,233,0.2);
+        }
+        .qr-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #0F172A;
+        }
+        #qrcode {
+            display: inline-flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .deploy-tip {
+            font-size: 12px;
+            color: #0EA5E9;
+            margin-top: 12px;
+            background: #F0F9FF;
+            padding: 8px;
+            border-radius: 30px;
+        }
+    </style>
+</head>
+<body>
+<div style="display: flex; flex-direction: column; align-items: center;">
+    <!-- 手机界面 -->
+    <div class="phone-mock">
+        <div class="dynamic-island"><span>9:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-battery-full"></i></span></div>
+        <div class="pages-container" id="pagesContainer">
+            <div class="page active-page" id="page1">
+                <div class="card"><div class="card-title"><i class="fas fa-heartbeat"></i> 今日身体指标</div><div class="stats-row"><div class="stat-item"><div class="editable-value"><input type="number" id="weightInput" step="0.1" value="67.2"><span class="unit">kg</span></div><div class="stat-label">体重</div></div><div class="stat-item"><div class="editable-value"><input type="number" id="bodyfatInput" step="0.1" value="21.8"><span class="unit">%</span></div><div class="stat-label">体脂率</div></div><div class="stat-item"><div class="editable-value"><span id="bmiValue" style="font-size:26px; font-weight:800;">22.9</span></div><div class="stat-label">BMI</div></div></div></div>
+                <div class="card"><div class="card-title"><i class="fas fa-utensils"></i> 智能饮食记录</div><div class="meal-section" data-meal="breakfast"><div class="meal-header"><span>🥣 早餐</span><span class="meal-total-cal" id="breakfastTotalCal">0 kcal</span></div><div id="breakfastItems"></div><button class="add-food-btn" data-meal="breakfast"><i class="fas fa-plus"></i> 添加食物</button></div><div class="meal-section" data-meal="lunch"><div class="meal-header"><span>🍱 午餐</span><span class="meal-total-cal" id="lunchTotalCal">0 kcal</span></div><div id="lunchItems"></div><button class="add-food-btn" data-meal="lunch"><i class="fas fa-plus"></i> 添加食物</button></div><div class="meal-section" data-meal="dinner"><div class="meal-header"><span>🥗 晚餐</span><span class="meal-total-cal" id="dinnerTotalCal">0 kcal</span></div><div id="dinnerItems"></div><button class="add-food-btn" data-meal="dinner"><i class="fas fa-plus"></i> 添加食物</button></div>
+                <div class="nutrient-bar"><div class="nutrient"><div>🔥 总摄入</div><strong id="totalCalories">0</strong> kcal</div><div class="nutrient"><div>🏃 消耗</div><input type="number" id="calExpend" value="320" step="10" style="width:60px; background:#F1F5F9; border-radius:30px; border:none; text-align:center;"></div><div class="nutrient"><div>🚶 步数</div><input type="number" id="stepsInput" value="8542" step="100" style="width:60px; background:#F1F5F9; border-radius:30px; border:none; text-align:center;"></div></div>
+                <div class="nutrient-bar"><div class="nutrient">🥩 蛋白质 <span id="totalProtein">0</span>g<div class="progress-bg"><div class="progress-fill" id="proteinFill"></div></div></div><div class="nutrient">🍚 碳水 <span id="totalCarb">0</span>g<div class="progress-bg"><div class="progress-fill" id="carbFill"></div></div></div><div class="nutrient">🧈 脂肪 <span id="totalFat">0</span>g<div class="progress-bg"><div class="progress-fill" id="fatFill"></div></div></div></div>
+                <div class="badge-icon" id="surplusText">🏆 卡路里盈余计算中</div>
+                <button class="ai-btn" id="aiAnalyzeBtn"><i class="fas fa-microchip"></i> 🤖 AI 健康分析</button></div>
+            </div>
+            <div class="page" id="page2"><div class="fullscreen-courses"><div class="course-col"><div class="section-header"><i class="fas fa-dumbbell"></i> 运动·热练</div><div class="img-course-card" data-course="🔥 HIIT全身燃脂·20分钟高效课程"><div class="course-img" style="background-image: url('https://picsum.photos/id/176/500/300');"><span class="course-badge"><i class="fas fa-fire"></i> 燃脂进阶</span></div></div><div class="img-course-card" data-course="🧘 晨间流瑜伽·柔韧塑造"><div class="course-img" style="background-image: url('https://picsum.photos/id/81/500/300');"><span class="course-badge"><i class="fas fa-praying-hands"></i> 身心平衡</span></div></div><div class="img-course-card" data-course="🏃 3km跑步入门计划·科学配速"><div class="course-img" style="background-image: url('https://picsum.photos/id/20/500/300');"><span class="course-badge"><i class="fas fa-person-running"></i> 有氧基础</span></div></div></div><div class="course-col"><div class="section-header"><i class="fas fa-carrot"></i> 饮食·滋养</div><div class="img-course-card" data-course="🥑 地中海饮食法｜抗炎减脂食谱"><div class="course-img" style="background-image: url('https://picsum.photos/id/127/500/300');"><span class="course-badge"><i class="fas fa-leaf"></i> 抗炎食谱</span></div></div><div class="img-course-card" data-course="🍽️ 16+8轻断食·科学空腹指南"><div class="course-img" style="background-image: url('https://picsum.photos/id/130/500/300');"><span class="course-badge"><i class="fas fa-clock"></i> 时间营养学</span></div></div><div class="img-course-card" data-course="🍠 控糖饮食课｜瘦身不挨饿"><div class="course-img" style="background-image: url('https://picsum.photos/id/102/500/300');"><span class="course-badge"><i class="fas fa-cookie-bite"></i> 低GI指南</span></div></div></div></div></div>
+            <div class="page" id="page3"><div class="recipe-master"><div class="recipe-title"><i class="fas fa-star-of-life" style="color:#F59E0B;"></i> 今日主厨甄选</div><div style="font-size: 32px; font-weight: 800;">香煎鸡胸能量碗</div><div class="price-tag">💰 食材总价 ≈ 32元</div><div class="steps"><i class="fas fa-utensils"></i> <strong>制作方式</strong><br>1️⃣ 鸡胸肉腌制煎黄<br>2️⃣ 藜麦牛油果沙拉<br>3️⃣ 油醋汁拌匀</div><div class="nutrition-badge">🔥 480kcal | 蛋白质48g</div></div><div class="search-card"><div class="card-title"><i class="fas fa-search"></i> 食物营养库</div><div class="search-box"><i class="fas fa-apple-alt" style="color:#0EA5E9"></i><input type="text" id="foodSearchInput" placeholder="输入食物名称" value="鸡胸肉"><button id="searchFoodBtn">查询</button></div><div id="foodResult" class="food-result"></div></div></div>
+            <div class="page" id="page4"><div class="card"><div class="card-title"><i class="fas fa-chart-simple"></i> 📊 周报·体重变化</div><div class="week-report"><div class="inline-flex" style="justify-content:space-between"><span>本周减重 -0.9kg 🎉</span><span class="badge-icon">目标89%</span></div><div class="week-bars" id="weekChart"></div></div></div><div class="card"><div class="card-title"><i class="fas fa-users"></i> 好友健身战报</div><div class="friend-item"><div>林小雅</div><div>🔥 1,250 kcal | 🚶12,340步</div></div><div class="friend-item"><div>陈飞宇</div><div>🍽️ 1,820kcal | 🧘瑜伽课</div></div><div class="friend-item"><div>周若彤</div><div>🏃 5km | 💧 2.2L</div></div></div><div class="points-shop"><div class="inline-flex" style="justify-content:space-between"><span><i class="fas fa-coins" style="color:#F59E0B;"></i> <strong id="userPoints">1260</strong> 积分</span><button class="btn-sm" id="getDailyPointsBtn">签到 +50</button></div><div class="inline-flex mt-2"><div class="btn-outline" id="redeemBandBtn">🔥 弹力带(200)</div><div class="btn-outline" id="redeemCouponBtn">🥗 优惠券(350)</div></div></div></div>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item" data-page="page1"><i class="fas fa-chalkboard-user"></i><span>主页</span></div>
+            <div class="nav-item" data-page="page2"><i class="fas fa-video"></i><span>课程</span></div>
+            <div class="nav-item" data-page="page3"><i class="fas fa-utensil-spoon"></i><span>饮食</span></div>
+            <div class="nav-item" data-page="page4"><i class="fas fa-chart-line"></i><span>动态</span></div>
+        </div>
+        <div class="danmaku-container" id="danmakuContainer"></div>
+        <div class="modal-overlay" id="customModal"><div class="modal-container"><div class="modal-icon"><i class="fas fa-robot"></i></div><div class="modal-message" id="modalMessage"></div><button class="modal-btn" id="modalCloseBtn">确定</button></div></div>
+    </div>
+
+    <!-- 二维码分享区域 (需部署后生效) -->
+    <div class="qr-share-area">
+        <div class="qr-title"><i class="fas fa-qrcode"></i> 扫码预览 / 分享给好友</div>
+        <div id="qrcode"></div>
+        <div class="deploy-tip" id="deployTip">
+            💡 提示：将本页面部署到公网服务器后，此处二维码将自动生成，扫码即可打开。
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 营养数据库 ----------
+    const FOOD_NUTRITION = {
+        "燕麦": { kcal: 389, protein: 16.9, carb: 66, fat: 6.9 }, "全麦面包": { kcal: 247, protein: 13, carb: 41, fat: 4.2 },
+        "鸡蛋": { kcal: 155, protein: 13, carb: 1.1, fat: 11 }, "牛奶": { kcal: 61, protein: 3.3, carb: 4.8, fat: 3.3 },
+        "香蕉": { kcal: 93, protein: 1.1, carb: 23, fat: 0.3 }, "鸡胸肉": { kcal: 165, protein: 31, carb: 0, fat: 3.6 },
+        "糙米": { kcal: 111, protein: 2.6, carb: 23, fat: 0.9 }, "西兰花": { kcal: 34, protein: 2.8, carb: 6.6, fat: 0.4 },
+        "三文鱼": { kcal: 208, protein: 20, carb: 0, fat: 13 }, "豆腐": { kcal: 76, protein: 8, carb: 1.9, fat: 4.8 },
+        "红薯": { kcal: 86, protein: 1.6, carb: 20, fat: 0.1 }, "虾仁": { kcal: 99, protein: 24, carb: 0.2, fat: 0.3 },
+        "菠菜": { kcal: 23, protein: 2.9, carb: 3.6, fat: 0.4 }, "牛油果": { kcal: 160, protein: 2, carb: 8.5, fat: 14.7 },
+        "苹果": { kcal: 52, protein: 0.3, carb: 13.8, fat: 0.2 }, "草莓": { kcal: 32, protein: 0.7, carb: 7.7, fat: 0.3 },
+        "蓝莓": { kcal: 57, protein: 0.7, carb: 14.5, fat: 0.3 }, "橙子": { kcal: 47, protein: 0.9, carb: 11.8, fat: 0.1 },
+        "核桃": { kcal: 654, protein: 15, carb: 14, fat: 65 }, "杏仁": { kcal: 579, protein: 21, carb: 22, fat: 49 },
+        "藜麦": { kcal: 120, protein: 4.4, carb: 21, fat: 1.9 }, "瘦牛肉": { kcal: 158, protein: 26, carb: 0, fat: 6 },
+        "猪里脊": { kcal: 155, protein: 27, carb: 0, fat: 5 }, "带鱼": { kcal: 127, protein: 18, carb: 0, fat: 5.9 },
+        "南瓜": { kcal: 26, protein: 1, carb: 6.5, fat: 0.1 }, "胡萝卜": { kcal: 41, protein: 0.9, carb: 10, fat: 0.2 },
+        "黄瓜": { kcal: 15, protein: 0.7, carb: 3.6, fat: 0.1 }, "西红柿": { kcal: 18, protein: 0.9, carb: 3.9, fat: 0.2 },
+        "蘑菇": { kcal: 22, protein: 3.1, carb: 3.3, fat: 0.3 }, "酸奶": { kcal: 61, protein: 3.5, carb: 4.7, fat: 3.3 },
+        "黑咖啡": { kcal: 2, protein: 0.3, carb: 0, fat: 0 }, "绿茶": { kcal: 1, protein: 0, carb: 0, fat: 0 }
+    };
+    let mealData = { breakfast: [], lunch: [], dinner: [] };
+    function getNutrition(food, w) { let info = FOOD_NUTRITION[food] || {kcal:0,protein:0,carb:0,fat:0}; let r=w/100; return { kcal: info.kcal*r, protein: info.protein*r, carb: info.carb*r, fat: info.fat*r }; }
+    function renderMeal(meal) {
+        let container = document.getElementById(`${meal}Items`); if(!container) return;
+        let items = mealData[meal]; let total=0; container.innerHTML='';
+        items.forEach((item,idx)=>{
+            let nut = getNutrition(item.foodName, item.weight); total+=nut.kcal;
+            let div = document.createElement('div'); div.className='food-item';
+            div.innerHTML = `<select class="food-select" data-meal="${meal}" data-idx="${idx}">${Object.keys(FOOD_NUTRITION).map(f=>`<option value="${f}" ${f===item.foodName?'selected':''}>${f}</option>`).join('')}</select>
+            <input type="number" class="food-weight" data-meal="${meal}" data-idx="${idx}" value="${item.weight}" step="10">
+            <span class="food-cal">${Math.round(nut.kcal)} kcal</span>
+            <button class="del-food" data-meal="${meal}" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button>`;
+            container.appendChild(div);
+        });
+        document.getElementById(`${meal}TotalCal`).innerText = Math.round(total)+' kcal';
+        updateTotal();
+    }
+    function updateTotal(){
+        let totalKcal=0,tp=0,tc=0,tf=0;
+        for(let m of ['breakfast','lunch','dinner']) for(let i of mealData[m]){ let n=getNutrition(i.foodName,i.weight); totalKcal+=n.kcal; tp+=n.protein; tc+=n.carb; tf+=n.fat; }
+        document.getElementById('totalCalories').innerText=Math.round(totalKcal);
+        document.getElementById('totalProtein').innerText=Math.round(tp);
+        document.getElementById('totalCarb').innerText=Math.round(tc);
+        document.getElementById('totalFat').innerText=Math.round(tf);
+        document.getElementById('proteinFill').style.width=Math.min(100,(tp/120)*100)+'%';
+        document.getElementById('carbFill').style.width=Math.min(100,(tc/250)*100)+'%';
+        document.getElementById('fatFill').style.width=Math.min(100,(tf/55)*100)+'%';
+        let expend=parseFloat(document.getElementById('calExpend').value)||0;
+        let surplus=expend-totalKcal;
+        document.getElementById('surplusText').innerHTML= surplus>=0 ? `🏆 卡路里盈余 +${Math.round(surplus)} kcal` : `🔥 卡路里赤字 ${Math.round(surplus)} kcal`;
+    }
+    function addFood(meal){ mealData[meal].push({foodName:'鸡胸肉',weight:100}); renderMeal(meal); }
+    function delFood(meal,idx){ mealData[meal].splice(idx,1); renderMeal(meal); }
+    function updateItem(meal,idx,field,val){ if(field==='foodName') mealData[meal][idx].foodName=val; else mealData[meal][idx].weight=parseFloat(val)||0; renderMeal(meal); }
+    document.addEventListener('click',e=>{
+        if(e.target.classList.contains('add-food-btn')||e.target.parentElement?.classList.contains('add-food-btn')){
+            let btn=e.target.classList.contains('add-food-btn')?e.target:e.target.parentElement;
+            addFood(btn.getAttribute('data-meal'));
+        }
+        if(e.target.classList.contains('del-food')||e.target.parentElement?.classList.contains('del-food')){
+            let del=e.target.classList.contains('del-food')?e.target:e.target.parentElement;
+            delFood(del.getAttribute('data-meal'),parseInt(del.getAttribute('data-idx')));
+        }
+    });
+    document.addEventListener('change',e=>{
+        if(e.target.classList.contains('food-select')) updateItem(e.target.dataset.meal,parseInt(e.target.dataset.idx),'foodName',e.target.value);
+        if(e.target.classList.contains('food-weight')) updateItem(e.target.dataset.meal,parseInt(e.target.dataset.idx),'weight',e.target.value);
+    });
+    document.addEventListener('input',e=>{ if(e.target.classList.contains('food-weight')) updateItem(e.target.dataset.meal,parseInt(e.target.dataset.idx),'weight',e.target.value); });
+    mealData.breakfast=[{foodName:'燕麦',weight:40},{foodName:'牛奶',weight:150}];
+    mealData.lunch=[{foodName:'鸡胸肉',weight:120},{foodName:'糙米',weight:80}];
+    mealData.dinner=[{foodName:'红薯',weight:100},{foodName:'虾仁',weight:80}];
+    renderMeal('breakfast'); renderMeal('lunch'); renderMeal('dinner');
+    document.getElementById('calExpend').addEventListener('input',updateTotal);
+    document.getElementById('stepsInput').addEventListener('input',updateTotal);
+
+    let wInput=document.getElementById('weightInput'), bmiSpan=document.getElementById('bmiValue');
+    function updateBMI(){ let w=parseFloat(wInput.value)||67.2; bmiSpan.innerText=(w/(1.71*1.71)).toFixed(1); }
+    wInput.addEventListener('input',updateBMI); updateBMI();
+
+    const modal=document.getElementById('customModal'), modalMsg=document.getElementById('modalMessage'), modalClose=document.getElementById('modalCloseBtn');
+    function showModal(msg){ modalMsg.innerText=msg; modal.classList.add('active'); }
+    modalClose.onclick=()=>modal.classList.remove('active');
+    modal.onclick=e=>{if(e.target===modal) modal.classList.remove('active');};
+    document.getElementById('aiAnalyzeBtn').onclick=()=>{
+        let total=parseFloat(document.getElementById('totalCalories').innerText), expend=parseFloat(document.getElementById('calExpend').value)||0, steps=parseFloat(document.getElementById('stepsInput').value)||0, bmi=parseFloat(bmiSpan.innerText);
+        let adv=(bmi>=24?"⚠️ BMI偏高，增加有氧。":bmi<18.5?"📈 BMI偏低，增加碳水。":"✅ BMI健康。");
+        if((expend-total)>300) adv+=" 热量缺口较大，注意营养。";
+        if(steps<6000) adv+=" 步数偏低，多走路。";
+        adv+=" 根据当前食材，推荐增加绿叶蔬菜。";
+        showModal(`🤖 AI分析：\n${adv}`);
+    };
+
+    const searchBtn=document.getElementById('searchFoodBtn'), foodInputElem=document.getElementById('foodSearchInput'), foodRes=document.getElementById('foodResult');
+    function searchFood(){ let name=foodInputElem.value.trim(); let data=FOOD_NUTRITION[name]; if(data) foodRes.innerHTML=`<div><strong>${name} (100g)</strong></div><div>🔥 ${Math.round(data.kcal)} kcal | 🥩 ${data.protein}g | 🍚 ${data.carb}g | 🧈 ${data.fat}g</div>`; else foodRes.innerHTML=`<div>未收录“${name}”</div><div class="text-small">支持多种常见食材：燕麦/鸡胸肉/三文鱼等</div>`; }
+    searchBtn.onclick=searchFood; searchFood();
+
+    const danContainer=document.getElementById('danmakuContainer');
+    function addDanmaku(msg){ if(!danContainer) return; let el=document.createElement('div'); el.className='danmaku'; el.style.top=(Math.random()*70+10)+'%'; el.innerHTML=`<i class="fas fa-comment-dots"></i> ${msg}`; danContainer.appendChild(el); el.onanimationend=()=>el.remove(); if(danContainer.children.length>40) danContainer.firstChild?.remove(); }
+    document.querySelectorAll('.img-course-card').forEach(c=>c.addEventListener('click',()=>addDanmaku(`✨ 加入计划：${c.getAttribute('data-course')||'课程'}`)));
+
+    let points=1260; const pointsSpan=document.getElementById('userPoints'); function updPoints(){ pointsSpan.innerText=points; }
+    document.getElementById('getDailyPointsBtn').onclick=()=>{ points+=50; updPoints(); showModal(`🎉 +50积分，现有${points}分`); };
+    function redeem(cost,name){ if(points>=cost){ points-=cost; updPoints(); showModal(`✅ 兑换${name}成功`); } else showModal(`❌ 积分不足`); }
+    document.getElementById('redeemBandBtn').onclick=()=>redeem(200,'弹力带');
+    document.getElementById('redeemCouponBtn').onclick=()=>redeem(350,'优惠券');
+
+    const weekData=[70.2,70.0,69.7,69.5,69.3,69.1,69.0];
+    const weekContainer=document.getElementById('weekChart');
+    if(weekContainer){ weekContainer.innerHTML=''; const maxW=Math.max(...weekData), minW=Math.min(...weekData), range=maxW-minW; weekData.forEach((w,i)=>{ let h=range===0?50:((maxW-w)/range)*60+20; let d=document.createElement('div'); d.style.flex=1; d.innerHTML=`<div class="bar" style="height:${h}px"></div><div class="text-small">${w}kg</div><div class="text-small">${['一','二','三','四','五','六','日'][i]}</div>`; weekContainer.appendChild(d); }); }
+
+    const pages=document.querySelectorAll('.page'), navs=document.querySelectorAll('.nav-item');
+    function switchPage(id){ pages.forEach(p=>p.classList.remove('active-page')); document.getElementById(id)?.classList.add('active-page'); navs.forEach(n=>{ if(n.dataset.page===id) n.classList.add('active'); else n.classList.remove('active'); }); }
+    navs.forEach(n=>n.addEventListener('click',()=>switchPage(n.dataset.page)));
+    const leftCol=document.querySelector('.course-col:first-child'), rightCol=document.querySelector('.course-col:last-child');
+    if(leftCol && rightCol){ leftCol.style.overflowY='auto'; rightCol.style.overflowY='auto'; }
+
+    // ---------- 动态生成二维码（需页面在http/https环境下）----------
+    if(window.location.protocol !== 'file:') {
+        var qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: window.location.href,
+            width: 120,
+            height: 120,
+            colorDark: "#0EA5E9",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        document.getElementById('deployTip').innerHTML = '✅ 已生成当前页面二维码，扫码即可打开该应用。';
+    } else {
+        document.getElementById('deployTip').innerHTML = '⚠️ 当前为本地文件，二维码无法直接使用。请将本文件部署到任意 Web 服务器（如 GitHub Pages、Vercel 或本地 http-server），然后扫码分享。';
+    }
+</script>
+</body>
+</html>
